@@ -130,3 +130,23 @@ body.dashboard-started .card-purifier{transition-delay:.48s}
 .control-item{transition:opacity .3s ease,filter .3s ease}
 .control-item.is-locked{opacity:.45;filter:grayscale(.7);pointer-events:none;user-select:none}
 button:disabled{cursor:not-allowed;transform:none!important}
+/* ===== Tinh chỉnh cho điện thoại / app ===== */
+/* Chống biểu đồ làm tràn ngang khi chỉ còn 1 cột */
+.panel{min-width:0}
+
+/* Thanh địa chỉ trên điện thoại làm 100vh bị lệch */
+body{min-height:100vh;min-height:100dvh}
+
+/* Tránh nút bị "kẹt" hiệu ứng nhấc lên sau khi chạm */
+@media(hover:none){button:hover{transform:none}}
+
+/* Màn hình điện thoại thấp: thu nhỏ màn hình START để không bị cắt */
+@media(max-height:640px){
+.intro-brand{margin-bottom:14px}
+.intro-brand h1{font-size:26px}
+.intro-hint{margin-top:12px}
+.purifier-large{width:200px;height:320px}
+.purifier-large .purifier-display{top:48px;width:68px;height:68px}
+.start-btn{top:130px;width:112px;height:46px}
+.purifier-grille{height:90px}
+}
