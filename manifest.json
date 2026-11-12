@@ -1,6 +1,6 @@
 {
-  "name": "DUT AIR FILTER",
-  "short_name": "Air Filter",
+  "name": "DUT App",
+"short_name": "DUT App",
   "id": "./",
   "description": "Ứng dụng giám sát và điều khiển máy lọc không khí",
   "start_url": "./",
