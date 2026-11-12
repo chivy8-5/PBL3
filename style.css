@@ -150,3 +150,6 @@ body{min-height:100vh;min-height:100dvh}
 .start-btn{top:130px;width:112px;height:46px}
 .purifier-grille{height:90px}
 }
+/* ===== Sửa lỗi bị hở bên phải trên điện thoại ===== */
+html{overflow-x:hidden;max-width:100%}
+.app-shell{overflow-x:clip}
