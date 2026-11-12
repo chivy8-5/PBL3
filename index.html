@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DUT AIR FILTER</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="intro-screen" id="introScreen">
+<div class="intro-brand">
+<span class="brand-kicker">SMART AIR PURIFIER</span>
+<h1>DUT AIR FILTER</h1>
+<p>Air quality monitoring & control</p>
+</div>
+<div class="purifier purifier-large" id="purifierIntro">
+<div class="purifier-top"></div>
+<div class="purifier-display">
+<span class="display-number">003</span>
+<small>AIR</small>
+</div>
+<button type="button" class="start-btn" id="startBtn">START</button>
+<div class="purifier-grille"></div>
+<div class="purifier-feet">
+<span></span>
+<span></span>
+</div>
+</div>
+<p class="intro-hint">Nhấn START để mở bảng điều khiển</p>
+</div>
+<div class="app-shell" id="appShell">
+<header class="main-header">
+<div class="header-brand">
+<div class="brand-mark">DUT</div>
+<div class="header-text">
+<h1>DUT AIR FILTER</h1>
+<p>SMART AIR QUALITY MONITORING SYSTEM</p>
+</div>
+</div>
+<div class="mqtt-strip">
+<div class="mqtt-indicator" id="mqttIndicator">
+<span class="dot"></span>
+<span>Đang chờ kết nối MQTT...</span>
+</div>
+<div class="mqtt-topics">
+<div class="topic-box">
+<label for="subTopic">Subscribe topic</label>
+<div class="topic-row">
+<input type="text" id="subTopic" value="thuctruyen" placeholder="Topic nhận dữ liệu">
+<button type="button" id="btnSubscribe" class="btn green-btn">Subscribe</button>
+</div>
+</div>
+<div class="topic-box">
+<label for="pubTopic">Publish topic</label>
+<div class="topic-row">
+<input type="text" id="pubTopic" value="thucnhan" placeholder="Topic gửi lệnh">
+<button type="button" id="btnUnsubscribe" class="btn red-btn">Unsubscribe</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="dashboard-grid" id="dashboardGrid">
+<section class="panel env-panel fly-card card-env">
+<div class="panel-head">
+<h2>ENVIRONMENT</h2>
+<span class="panel-tag">LIVE</span>
+</div>
+<div class="metric-card">
+<div class="metric-icon">🌡️</div>
+<div class="metric-info">
+<div class="metric-label">Nhiệt độ</div>
+<div class="metric-value">
+<span id="temperature">--</span>
+<span class="unit">°C</span>
+</div>
+</div>
+<div class="metric-badge" id="tempBadge">--</div>
+</div>
+<div class="metric-card">
+<div class="metric-icon">💧</div>
+<div class="metric-info">
+<div class="metric-label">Độ ẩm</div>
+<div class="metric-value">
+<span id="humidity">--</span>
+<span class="unit">%</span>
+</div>
+</div>
+<div class="metric-badge" id="humBadge">--</div>
+</div>
+</section>
+<section class="panel air-panel fly-card card-air">
+<div class="panel-head">
+<h2>AIR QUALITY</h2>
+<span class="panel-tag" id="pmBadge">--</span>
+</div>
+<div class="air-main">
+<div class="air-ring" id="airRing">
+<div class="air-ring-inner">
+<div class="ring-big" id="pm25Value">--</div>
+<div class="ring-small">PM2.5</div>
+</div>
+</div>
+<div class="air-side">
+<div class="air-status" id="aqiMessage">Đang chờ dữ liệu PM2.5</div>
+<div class="air-chip">BỤI MỊN</div>
+</div>
+</div>
+</section>
+<section class="panel control-panel fly-card card-control">
+<div class="panel-head">
+<h2>CONTROL</h2>
+<span class="panel-tag">SMART</span>
+</div>
+<div class="control-list">
+<div class="control-item">
+<div class="control-label">1. POWER</div>
+<div class="control-action power-row">
+<button type="button" id="powerToggle" class="btn control-btn">OFF</button>
+<span class="state-pill" id="powerState">Thiết bị tắt</span>
+</div>
+</div>
+<div class="control-item">
+<div class="control-label">2. AUTO MODE</div>
+<div class="control-action power-row">
+<button type="button" id="autoToggle" class="btn control-btn secondary-btn">AUTO OFF</button>
+<span class="state-pill" id="autoState">Chưa bật</span>
+</div>
+</div>
+<div class="control-item">
+<div class="control-label">3. FAN SPEED</div>
+<div class="control-action speed-row">
+<button type="button" id="fanStepBtn" class="btn control-btn">+ SPEED</button>
+<div class="speed-box">
+<div class="speed-track">
+<div class="speed-fill" id="fanFill"></div>
+</div>
+<div class="speed-text">
+<span id="fanValue">0</span>%
+</div>
+</div>
+</div>
+</div>
+<div class="control-item">
+<div class="control-label">4. SLEEP MODE</div>
+<div class="control-action power-row">
+<button type="button" id="sleepToggle" class="btn control-btn secondary-btn">
+<span id="sleepIcon">☀️</span>
+<span id="sleepButtonText">DAY</span>
+</button>
+<span class="state-pill" id="sleepState">Đèn đang bật</span>
+</div>
+</div>
+<div class="control-item">
+<div class="control-label">5. TIMER</div>
+<div class="control-action power-row">
+<button type="button" id="timerBtn" class="btn control-btn">TIMER</button>
+<span class="state-pill" id="timerValue">0h</span>
+</div>
+</div>
+</div>
+<div class="control-note" id="controlNote">Lệnh điều khiển sẽ được gửi qua MQTT.</div>
+</section>
+<section class="panel purifier-panel fly-card card-purifier">
+<div class="purifier-wrapper">
+<div class="purifier purifier-small">
+<div class="purifier-top"></div>
+<div class="purifier-display">
+<span id="machineValue">AIR</span>
+<small>FILTER</small>
+</div>
+<div class="purifier-grille"></div>
+<div class="purifier-feet">
+<span></span>
+<span></span>
+</div>
+</div>
+<div class="purifier-caption">SMART PURIFIER</div>
+</div>
+</section>
+<section class="panel chart-panel fly-card card-chart">
+<div class="panel-head">
+<h2>HISTORY CHART</h2>
+<span class="panel-tag">REAL TIME</span>
+</div>
+<div class="chart-description">
+<span class="chart-key dust-key">PM2.5</span>
+<span class="chart-key temp-key">Nhiệt độ</span>
+<span class="chart-key humidity-key">Độ ẩm</span>
+</div>
+<div class="chart-container">
+<canvas id="sensorChart"></canvas>
+</div>
+<div class="last-update">
+Cập nhật lần cuối:
+<span id="lastUpdate">--/--/---- --:--:--</span>
+</div>
+</section>
+</main>
+</div>
+<script>
+const startBtn=document.getElementById("startBtn");
+const introScreen=document.getElementById("introScreen");
+const appShell=document.getElementById("appShell");
+startBtn.addEventListener("click",()=>{
+introScreen.classList.add("intro-exit");
+setTimeout(()=>{
+introScreen.style.display="none";
+appShell.classList.add("app-ready");
+document.body.classList.add("dashboard-started");
+window.dispatchEvent(new Event("resize"));
+},700);
+});
+</script>
+<script src="app.js"></script>
+</body>
+</html>
