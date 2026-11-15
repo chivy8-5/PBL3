@@ -66,7 +66,7 @@ input:focus{outline:none;border-color:#42a58d;box-shadow:0 0 0 3px rgba(66,165,1
 .air-main{display:flex;align-items:center;justify-content:center;gap:30px;min-height:245px;position:relative;z-index:2}
 .air-ring{width:152px;height:152px;border-radius:50%;border:13px solid #4cb69a;display:flex;flex-direction:column;align-items:center;justify-content:center;background:white;box-shadow:0 9px 24px rgba(53,142,119,.14),inset 0 0 0 7px #eef8f5}
 .air-ring-inner{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring-big{font-size:42px;font-weight:800;color:#174b40;line-height:1}
+.ring-big{font-size:36px;font-weight:800;color:#174b40;line-height:1;white-space:nowrap}
 .ring-small{margin-top:6px;font-size:11px;color:#789089;letter-spacing:1px}
 .air-side{display:flex;flex-direction:column;gap:14px;max-width:200px}
 .air-status{font-size:18px;line-height:1.4;color:#6e827c;font-weight:700}
@@ -79,7 +79,7 @@ input:focus{outline:none;border-color:#42a58d;box-shadow:0 0 0 3px rgba(66,165,1
 .control-btn{min-width:120px;background:#34aa76;color:white;font-weight:800;border-radius:13px}
 .secondary-btn{background:#486f7f}
 .state-pill{display:flex;align-items:center;justify-content:center;min-width:120px;padding:10px 12px;border-radius:999px;background:#dfece8;color:#42635c;font-size:11px;font-weight:800;text-align:center}
-.speed-row{display:grid;grid-template-columns:125px 1fr;gap:12px;align-items:center}
+.speed-row{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
 .speed-box{display:flex;align-items:center;gap:9px}
 .speed-track{flex:1;height:14px;border-radius:999px;background:#d6e5e0;overflow:hidden}
 .speed-fill{height:100%;width:0;background:linear-gradient(90deg,#3cb884,#2c8c62);border-radius:999px;transition:width .3s ease}
@@ -89,7 +89,7 @@ input:focus{outline:none;border-color:#42a58d;box-shadow:0 0 0 3px rgba(66,165,1
 .purifier-small{width:155px;height:245px;border-radius:26px 26px 18px 18px}
 .purifier-small .purifier-top{left:12px;right:12px;height:22px}
 .purifier-small .purifier-display{top:46px;width:52px;height:52px;border-width:3px}
-.purifier-small .purifier-display span{font-size:14px}
+.purifier-small .purifier-display span{font-size:12px;white-space:nowrap}
 .purifier-small .purifier-display small{font-size:7px}
 .purifier-small .purifier-grille{left:16px;right:16px;bottom:20px;height:96px;background-size:6px 6px}
 .purifier-small .purifier-feet{padding:0 22px}
@@ -124,7 +124,7 @@ body.dashboard-started .card-purifier{transition-delay:.48s}
 .status-humid{background:#e88712}
 @media(max-width:1200px){.main-header{flex-direction:column;align-items:stretch}.mqtt-strip{justify-content:flex-start}.dashboard-grid{grid-template-columns:1fr 1fr;grid-template-areas:"env air" "control control" "chart purifier"}}
 @media(max-width:800px){.app-shell{padding:10px}.dashboard-grid{grid-template-columns:1fr;grid-template-areas:"env" "air" "control" "chart" "purifier"}.mqtt-topics{width:100%}.topic-box{flex:1;min-width:220px}.topic-row input{flex:1;width:auto}.air-main{flex-direction:column}.power-row{flex-direction:column;align-items:stretch}.state-pill{width:100%}.speed-row{grid-template-columns:1fr}.control-btn{width:100%}.chart-container{height:300px}.intro-brand h1{font-size:32px}.purifier-large{width:270px;height:420px}}
-@media(max-width:520px){.main-header{padding:16px}.header-brand{align-items:flex-start}.brand-mark{width:46px;height:46px}.header-text h1{font-size:20px}.header-text p{font-size:10px}.mqtt-strip{gap:12px}.mqtt-indicator{white-space:normal}.mqtt-topics{flex-direction:column}.topic-box{width:100%;min-width:0}.topic-row{width:100%;flex-direction:column;align-items:stretch}.topic-row input{min-width:0;width:100%}.metric-card{grid-template-columns:auto minmax(0,1fr)}.metric-badge{grid-column:2;justify-self:start}.air-ring{width:135px;height:135px}.chart-container{height:250px;padding-left:8px;padding-right:8px}.intro-brand h1{font-size:27px;letter-spacing:2px}.purifier-large{width:235px;height:370px}.purifier-large .purifier-display{top:65px}.start-btn{top:155px}.purifier-grille{height:125px}}
+@media(max-width:520px){.main-header{padding:16px}.header-brand{align-items:flex-start}.brand-mark{width:46px;height:46px}.header-text h1{font-size:20px}.header-text p{font-size:10px}.mqtt-strip{gap:12px}.mqtt-indicator{white-space:normal}.mqtt-topics{flex-direction:column}.topic-box{width:100%;min-width:0}.topic-row{width:100%;flex-direction:column;align-items:stretch}.topic-row input{min-width:0;width:100%}.metric-card{grid-template-columns:auto minmax(0,1fr)}.metric-badge{grid-column:2;justify-self:start}.air-ring{width:135px;height:135px}.ring-big{font-size:32px}.chart-container{height:250px;padding-left:8px;padding-right:8px}.intro-brand h1{font-size:27px;letter-spacing:2px}.purifier-large{width:235px;height:370px}.purifier-large .purifier-display{top:65px}.start-btn{top:155px}.purifier-grille{height:125px}}
 
 /* ===== Làm mờ + khóa điều khiển khi nguồn OFF (vẫn hiển thị) ===== */
 .control-item{transition:opacity .3s ease,filter .3s ease}
@@ -153,3 +153,12 @@ body{min-height:100vh;min-height:100dvh}
 /* ===== Sửa lỗi bị hở bên phải trên điện thoại ===== */
 html{overflow-x:hidden;max-width:100%}
 .app-shell{overflow-x:clip}
+
+/* ===== Nút tăng/giảm tốc độ quạt ===== */
+.speed-buttons{display:flex;gap:8px}
+.speed-btn{min-width:52px;padding:0 16px;font-size:22px;line-height:1}
+#fanMinusBtn{background:#d9555e}
+@media(max-width:800px){
+  .speed-buttons{width:100%}
+  .speed-btn{flex:1;width:auto}
+}
