@@ -1,10 +1,10 @@
 {
   "name": "DUT App",
   "short_name": "DUT App",
-  "id": "./",
+  "id": "/PBL3/",
   "description": "Ứng dụng giám sát và điều khiển máy lọc không khí",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/PBL3/",
+  "scope": "/PBL3/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f5f5f5",
