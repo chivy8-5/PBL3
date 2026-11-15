@@ -1,27 +1,53 @@
 {
+
   "name": "DUT App",
+
   "short_name": "DUT App",
-  "id": "/PBL3/",
+
+  "id": "./",
+
   "description": "Ứng dụng giám sát và điều khiển máy lọc không khí",
-  "start_url": "/PBL3/",
-  "scope": "/PBL3/",
+
+  "start_url": "./",
+
+  "scope": "./",
+
   "display": "standalone",
+
   "orientation": "portrait",
+
   "background_color": "#f5f5f5",
+
   "theme_color": "#007bff",
+
   "lang": "vi",
+
   "icons": [
+
     {
+
       "src": "icon-192.png?v=2",
+
       "sizes": "192x192",
+
       "type": "image/png",
+
       "purpose": "any"
+
     },
+
     {
+
       "src": "icon-512.png?v=2",
+
       "sizes": "512x512",
+
       "type": "image/png",
+
       "purpose": "any"
+
     }
+
   ]
+
 }
