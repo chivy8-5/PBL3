@@ -6,21 +6,58 @@ let desiredSubTopic=null;
 let sensorChart=null;
 let lastSensorTime=null;
 const MAX_CHART_POINTS=60;
+const FAN_STEP=25;
+
+// Ngưỡng hiển thị (khớp với màn hình TFT trên ESP32)
+const TEMP_COLD=25;       // < 25  : LẠNH
+const TEMP_HOT=30;        // > 30  : NÓNG, còn lại 25..30: MÁT MẺ
+const DUST_GOOD_MAX=12;   // <= 12 : TỐT
+const DUST_MID_MAX=35.4;  // 12..35.4: TRUNG BÌNH, > 35.4: CAO
+
 const deviceState={power:false,auto:false,fanSpeed:0,sleep:false,timer:0};
 function getElement(id){return document.getElementById(id)}
 function setText(id,value){const el=getElement(id);if(el)el.textContent=value}
 function toValidNumber(value){if(value===undefined||value===null||value===""||typeof value==="boolean")return null;const n=Number(value);return Number.isFinite(n)?n:null}
 function formatNumber(value){if(value===null||value===undefined)return"--";return Number(value).toLocaleString("vi-VN",{maximumFractionDigits:2})}
+// Luôn hiển thị đúng 1 chữ số thập phân (ví dụ 15,3 hoặc 8,0)
+function formatOneDecimal(value){if(value===null||value===undefined)return"--";return Number(value).toLocaleString("vi-VN",{minimumFractionDigits:1,maximumFractionDigits:1})}
 function formatDateTime(date){return date.toLocaleString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
 function updateMQTTStatus(text,state="waiting"){const box=getElement("mqttIndicator");if(!box)return;let color="#f0b94b";if(state==="connected")color="#59d39d";if(state==="error")color="#e65b63";box.innerHTML=`<span class="dot" style="background:${color};box-shadow:0 0 0 5px ${state==="connected"?"rgba(89,211,157,.13)":state==="error"?"rgba(230,91,99,.13)":"rgba(240,185,75,.13)"}"></span><span>${text}</span>`}
 function connectToBroker(){const options={keepalive:60,clientId:clientId,protocolId:"MQTT",protocolVersion:4,clean:true,reconnectPeriod:2000,connectTimeout:30000};mqttClient=mqtt.connect(BROKER_URL,options);mqttClient.on("connect",()=>{console.log("Kết nối MQTT thành công:",clientId);updateMQTTStatus("Đã kết nối MQTT","connected");if(desiredSubTopic){mqttClient.subscribe(desiredSubTopic,{qos:0},err=>{if(err){console.error(err);updateMQTTStatus("Subscribe thất bại","error");return}currentSubTopic=desiredSubTopic;updateMQTTStatus("Đang nhận dữ liệu","connected")})}});mqttClient.on("error",err=>{console.error("MQTT lỗi:",err);updateMQTTStatus("Kết nối MQTT thất bại","error")});mqttClient.on("close",()=>{currentSubTopic=null;updateMQTTStatus("Mất kết nối MQTT","error")});mqttClient.on("reconnect",()=>{updateMQTTStatus("Đang kết nối lại MQTT...","waiting")});mqttClient.on("message",(topic,message)=>{const payload=message.toString();console.log("MQTT RX:",topic,payload);if(topic===currentSubTopic)handleSensorData(payload)})}
 function subscribeTopic(){if(!mqttClient||!mqttClient.connected){alert("Chưa kết nối MQTT Broker!");return}const input=getElement("subTopic");if(!input)return;const topic=input.value.trim();if(!topic){alert("Vui lòng nhập Topic Subscribe!");return}const doSubscribe=()=>{mqttClient.subscribe(topic,{qos:0},err=>{if(err){console.error("Subscribe lỗi:",err);updateMQTTStatus("Subscribe thất bại","error");return}currentSubTopic=topic;desiredSubTopic=topic;updateMQTTStatus("Đang nhận: "+topic,"connected");console.log("Đã subscribe:",topic)})};if(currentSubTopic&&currentSubTopic!==topic){mqttClient.unsubscribe(currentSubTopic,err=>{if(err){console.error(err);return}currentSubTopic=null;desiredSubTopic=null;doSubscribe()})}else doSubscribe()}
 function unsubscribeTopic(){if(!mqttClient||!mqttClient.connected){alert("Chưa kết nối MQTT Broker!");return}if(!currentSubTopic){alert("Không có topic để unsubscribe!");return}const oldTopic=currentSubTopic;mqttClient.unsubscribe(oldTopic,err=>{if(err){console.error("Unsubscribe lỗi:",err);return}currentSubTopic=null;desiredSubTopic=null;updateMQTTStatus("Đã unsubscribe: "+oldTopic,"waiting");console.log("Đã unsubscribe:",oldTopic)})}
-function setBadge(id,text,className){const el=getElement(id);if(!el)return;el.textContent=text;el.style.background=className==="good"?"#20a35b":className==="warning"?"#e7a400":className==="danger"?"#e53e4d":"#94a3b8"}
-function updateTemperatureStatus(value){if(value<25)setBadge("tempBadge","COLD","danger");else if(value<=26)setBadge("tempBadge","GOOD","good");else setBadge("tempBadge","HOT","danger")}
+function setBadge(id,text,className){const el=getElement(id);if(!el)return;el.textContent=text;el.style.background=className==="good"?"#20a35b":className==="warning"?"#e7a400":className==="danger"?"#e53e4d":className==="cold"?"#3b82c4":"#94a3b8"}
+
+// Nhiệt độ: < 25 LẠNH | 25..30 MÁT MẺ | > 30 NÓNG
+function updateTemperatureStatus(value){
+  if(value<TEMP_COLD)setBadge("tempBadge","LẠNH","cold");
+  else if(value<=TEMP_HOT)setBadge("tempBadge","MÁT MẺ","good");
+  else setBadge("tempBadge","NÓNG","danger");
+}
+
 function updateHumidityStatus(value){if(value<30)setBadge("humBadge","THẤP","warning");else if(value<=60)setBadge("humBadge","GOOD","good");else setBadge("humBadge","CAO","warning")}
-function updateDustStatus(value){const badge=getElement("pmBadge");const message=getElement("aqiMessage");const ring=getElement("airRing");if(value<=9){if(badge){badge.textContent="TỐT";badge.style.background="#def4ec";badge.style.color="#2a8e73"}if(message)message.textContent="Chất lượng không khí tốt";if(ring)ring.style.borderColor="#4cb69a"}else if(value<=35.4){if(badge){badge.textContent="TRUNG BÌNH";badge.style.background="#fff0c9";badge.style.color="#b77900"}if(message)message.textContent="Chất lượng không khí trung bình";if(ring)ring.style.borderColor="#e7a400"}else{if(badge){badge.textContent="CAO";badge.style.background="#ffe0e3";badge.style.color="#c93d49"}if(message)message.textContent="Nồng độ bụi PM2.5 cao";if(ring)ring.style.borderColor="#e53e4d"}}
-function handleSensorData(payload){let data;try{data=JSON.parse(payload)}catch(error){console.log("Message không phải JSON:",payload);return}if(!data||typeof data!=="object"||Array.isArray(data))return;const temperature=toValidNumber(data.temperature);const humidity=toValidNumber(data.humidity);const dust=toValidNumber(data.dust??data.pm25??data.pm2_5);if(temperature!==null){setText("temperature",formatNumber(temperature));updateTemperatureStatus(temperature)}if(humidity!==null){setText("humidity",formatNumber(humidity));updateHumidityStatus(humidity)}if(dust!==null){setText("pm25Value",formatNumber(dust));setText("machineValue",formatNumber(dust));updateDustStatus(dust)}if(temperature===null&&humidity===null&&dust===null){handleDeviceFeedback(data);return}lastSensorTime=new Date();setText("lastUpdate",formatDateTime(lastSensorTime));addChartPoint(lastSensorTime,temperature,humidity,dust);handleDeviceFeedback(data)}
+
+// PM2.5: <= 12 TỐT | 12..35.4 TRUNG BÌNH | > 35.4 CAO
+function updateDustStatus(value){
+  const badge=getElement("pmBadge");
+  const message=getElement("aqiMessage");
+  const ring=getElement("airRing");
+  if(value<=DUST_GOOD_MAX){
+    if(badge){badge.textContent="TỐT";badge.style.background="#def4ec";badge.style.color="#2a8e73"}
+    if(message)message.textContent="Chất lượng không khí tốt";
+    if(ring)ring.style.borderColor="#4cb69a";
+  }else if(value<=DUST_MID_MAX){
+    if(badge){badge.textContent="TRUNG BÌNH";badge.style.background="#fff0c9";badge.style.color="#b77900"}
+    if(message)message.textContent="Chất lượng không khí trung bình";
+    if(ring)ring.style.borderColor="#e7a400";
+  }else{
+    if(badge){badge.textContent="CAO";badge.style.background="#ffe0e3";badge.style.color="#c93d49"}
+    if(message)message.textContent="Nồng độ bụi PM2.5 cao";
+    if(ring)ring.style.borderColor="#e53e4d";
+  }
+}
+
+function handleSensorData(payload){let data;try{data=JSON.parse(payload)}catch(error){console.log("Message không phải JSON:",payload);return}if(!data||typeof data!=="object"||Array.isArray(data))return;const temperature=toValidNumber(data.temperature);const humidity=toValidNumber(data.humidity);const dust=toValidNumber(data.dust??data.pm25??data.pm2_5);if(temperature!==null){setText("temperature",formatNumber(temperature));updateTemperatureStatus(temperature)}if(humidity!==null){setText("humidity",formatNumber(humidity));updateHumidityStatus(humidity)}if(dust!==null){setText("pm25Value",formatOneDecimal(dust));setText("machineValue",formatOneDecimal(dust));updateDustStatus(dust)}if(temperature===null&&humidity===null&&dust===null){handleDeviceFeedback(data);return}lastSensorTime=new Date();setText("lastUpdate",formatDateTime(lastSensorTime));addChartPoint(lastSensorTime,temperature,humidity,dust);handleDeviceFeedback(data)}
 function initializeChart(){const canvas=getElement("sensorChart");if(!canvas||typeof Chart==="undefined")return;sensorChart=new Chart(canvas,{type:"line",data:{labels:[],datasets:[{label:"PM2.5",data:[],borderColor:"#29956c",backgroundColor:"rgba(41,149,108,.08)",borderWidth:3,pointRadius:2,tension:.3,spanGaps:true,yAxisID:"yDust"},{label:"Nhiệt độ",data:[],borderColor:"#e99151",backgroundColor:"rgba(233,145,81,.06)",borderWidth:2,borderDash:[8,6],pointRadius:2,tension:.3,spanGaps:true,yAxisID:"yEnvironment"},{label:"Độ ẩm",data:[],borderColor:"#4c83ce",backgroundColor:"rgba(76,131,206,.06)",borderWidth:2,borderDash:[8,6],pointRadius:2,tension:.3,spanGaps:true,yAxisID:"yEnvironment"}]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{enabled:true}},scales:{x:{ticks:{maxTicksLimit:8,color:"#71857f"},grid:{color:"rgba(70,105,95,.08)"}},yEnvironment:{type:"linear",position:"left",ticks:{color:"#71857f"},grid:{color:"rgba(70,105,95,.08)"},title:{display:true,text:"Nhiệt độ / Độ ẩm"}},yDust:{type:"linear",position:"right",ticks:{color:"#71857f"},grid:{drawOnChartArea:false},title:{display:true,text:"PM2.5"}}}}})}
 function addChartPoint(time,temperature,humidity,dust){if(!sensorChart)return;sensorChart.data.labels.push(time.toLocaleTimeString("vi-VN",{hour12:false}));sensorChart.data.datasets[0].data.push(dust);sensorChart.data.datasets[1].data.push(temperature);sensorChart.data.datasets[2].data.push(humidity);while(sensorChart.data.labels.length>MAX_CHART_POINTS){sensorChart.data.labels.shift();sensorChart.data.datasets.forEach(dataset=>dataset.data.shift())}sensorChart.update("none")}
 function publishMQTT(data){if(!mqttClient||!mqttClient.connected){alert("Chưa kết nối MQTT Broker!");return false}const input=getElement("pubTopic");if(!input)return false;const topic=input.value.trim();if(!topic){alert("Vui lòng nhập Topic Publish!");return false}const payload=JSON.stringify(data);mqttClient.publish(topic,payload,{qos:0,retain:false},err=>{if(err){console.error("Publish lỗi:",err);alert("Không thể gửi lệnh MQTT!");return}console.log("MQTT TX:",topic,payload)});return true}
@@ -96,10 +133,12 @@ function toggleAuto(){
   publishMQTT({auto:deviceState.auto?"ON":"OFF"});
 }
 
-function stepFanSpeed(){
+// delta > 0: tăng tốc (+25), delta < 0: giảm tốc (-25). Giới hạn trong khoảng 0..100
+function stepFanSpeed(delta){
   if(!deviceState.power)return;          // nguồn OFF: không làm gì
-  deviceState.fanSpeed+=25;
-  if(deviceState.fanSpeed>100)deviceState.fanSpeed=0;
+  const next=Math.max(0,Math.min(100,deviceState.fanSpeed+delta));
+  if(next===deviceState.fanSpeed)return; // đã chạm 0% hoặc 100%
+  deviceState.fanSpeed=next;
   deviceState.auto=false;                // đổi tay thì thoát Auto (giống firmware)
   updateControlUI();
   publishMQTT({fanSpeed:deviceState.fanSpeed});
@@ -161,5 +200,14 @@ function handleDeviceFeedback(data){
 /* ===================== HẾT PHẦN ĐIỀU KHIỂN ===================== */
 
 function checkLiveStatus(){if(!lastSensorTime)return;const elapsed=Date.now()-lastSensorTime.getTime();if(elapsed>60000){const badge=getElement("pmBadge");if(badge){badge.textContent="OFFLINE";badge.style.background="#ffe0e3";badge.style.color="#c93d49"}}}
-function setupEventListeners(){const subscribe=getElement("btnSubscribe");if(subscribe)subscribe.addEventListener("click",subscribeTopic);const unsubscribe=getElement("btnUnsubscribe");if(unsubscribe)unsubscribe.addEventListener("click",unsubscribeTopic);const power=getElement("powerToggle");if(power)power.addEventListener("click",togglePower);const auto=getElement("autoToggle");if(auto)auto.addEventListener("click",toggleAuto);const fan=getElement("fanStepBtn");if(fan)fan.addEventListener("click",stepFanSpeed);const sleep=getElement("sleepToggle");if(sleep)sleep.addEventListener("click",toggleSleep);const timer=getElement("timerBtn");if(timer)timer.addEventListener("click",stepTimer)}
+function setupEventListeners(){
+  const subscribe=getElement("btnSubscribe");if(subscribe)subscribe.addEventListener("click",subscribeTopic);
+  const unsubscribe=getElement("btnUnsubscribe");if(unsubscribe)unsubscribe.addEventListener("click",unsubscribeTopic);
+  const power=getElement("powerToggle");if(power)power.addEventListener("click",togglePower);
+  const auto=getElement("autoToggle");if(auto)auto.addEventListener("click",toggleAuto);
+  const fanPlus=getElement("fanStepBtn");if(fanPlus)fanPlus.addEventListener("click",()=>stepFanSpeed(FAN_STEP));
+  const fanMinus=getElement("fanMinusBtn");if(fanMinus)fanMinus.addEventListener("click",()=>stepFanSpeed(-FAN_STEP));
+  const sleep=getElement("sleepToggle");if(sleep)sleep.addEventListener("click",toggleSleep);
+  const timer=getElement("timerBtn");if(timer)timer.addEventListener("click",stepTimer);
+}
 window.addEventListener("load",()=>{initializeChart();setupEventListeners();updateControlUI();connectToBroker();setInterval(checkLiveStatus,5000)});
